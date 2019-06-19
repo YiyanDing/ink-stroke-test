@@ -1,0 +1,180 @@
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<script src="http://cdn.jsdelivr.net/g/filesaver.js"></script>
+</head>
+
+<body>
+  <br><br><br><br><br><br><br>
+  <div id="canvasDiv">
+  <canvas id="canvas" width="490" height="220" style="border:1px solid #000000;"></canvas>
+  </div>
+  <button onclick="repeatIt()">Repeat</button>
+  <button onclick="saveIt()">Save</button>
+  <input type="file" id="fileinput" />
+  <br>
+  <div id="canvasDiv2">
+  <canvas id="canvas2" width="490" height="220" style="border:1px solid #000000;"></canvas>
+  </div>
+
+  <script>
+    document.getElementById('fileinput').addEventListener('change', readSingleFile, false);
+    //Reference: http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/
+    context = document.getElementById('canvas').getContext("2d");
+    var canvasDiv = document.getElementById('canvasDiv');
+
+    let canvasWidth = 490
+    let canvasHeight = 220
+    context2 = document.getElementById('canvas2').getContext("2d");
+    var canvasDiv2 = document.getElementById('canvasDiv2');
+
+    $('#canvas').mousedown(function(e){
+      //Mouse clicked
+      paint = true;
+      addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop);
+      redraw(context);
+    });
+
+    $('#canvas').mousemove(function(e){
+      //Mouse is moving
+    if(paint){ //If mouse was clicked, draw line
+      addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop, true);
+      redraw(context);
+    }
+    });
+
+    $('#canvas').mouseup(function(e){
+      //If mouse is no longer clicked, do not draw line
+      paint = false;
+    });
+
+    $('#canvas').mouseleave(function(e){
+      //If mouse is pointing outside the canvas, do not draw line
+      paint = false;
+    });
+    var clickX = new Array();
+    var clickY = new Array();
+    var clickDrag = new Array(); //Records mouse drag event (T/F)
+    var clickTimeStamp = new Array();
+    var paint;
+
+    function addClick(x, y, dragging)
+    {
+      //Logs the mouse activity where applicable
+      clickX.push(x);
+      clickY.push(y);
+      clickTimeStamp.push(new Date().getTime());
+      clickDrag.push(dragging);
+    }
+
+    function redraw(object){
+      //Draws the drawing on the canvas "object"
+      object.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+
+      object.strokeStyle = "rgb(20,20,20)";
+      object.lineJoin = "round";
+      object.lineWidth = 5;
+
+      for(var i=0; i < clickX.length; i++) {
+        object.beginPath();
+        if(clickDrag[i] && i){
+          object.moveTo(clickX[i-1], clickY[i-1]);
+         }else{
+           object.moveTo(clickX[i]-1, clickY[i]);
+         }
+         object.lineTo(clickX[i], clickY[i]);
+         object.closePath();
+         object.stroke();
+      }
+    }
+    function sleep(milliseconds) {
+      //Delays the execution for a prescribed milliseconds.
+      var start = new Date().getTime();
+      for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds){
+          break;
+        }
+      }
+    }
+
+    var j=1;
+    var clickX_original;
+    var clickY_original;
+    var loop_id;
+
+    function repeater(){
+      //Manages repeats
+      if(j<clickX_original.length){
+        sleep(clickTimeStamp[j]-clickTimeStamp[j-1]);
+        clickX = clickX_original.slice(0,j)
+        clickY = clickY_original.slice(0,j)
+        redraw(context2);
+      }
+      else{
+        clearInterval(loop_id);
+        clickX = clickX_original;
+        clickY = clickY_original;
+      }
+      j+=1
+    }
+    function SaveAsFile(text,filename) {
+      //REF https://github.com/eligrey/FileSaver.js/wiki/FileSaver.js-Example
+            try {
+                var obj = new Blob([text],{type:"text/plain;charset=utf-8"});
+                saveAs(obj, filename);
+            } catch (e) {
+                console.log("ERROR");
+                console.log(e);
+                window.open("data:"+"text/plain;charset=utf-8"+"," + encodeURIComponent(text), '_blank','');
+            }
+        }
+    function readSingleFile(evt) {
+        //Retrieve the first (and only!) File from the FileList object
+        //REF https://www.htmlgoodies.com/beyond/javascript/read-text-files-using-the-javascript-filereader.html
+        var f = evt.target.files[0];
+
+        if (f) {
+          var r = new FileReader();
+          r.onload = function(e) {
+
+            //Retrieves the file contents
+    	      var contents = e.target.result;
+            var datastructure = JSON.parse(contents);
+
+            //Recover data
+            clickX = datastructure["clickX"];
+            clickY = datastructure["clickY"];
+            clickDrag = datastructure["clickDrag"];
+            clickTimeStamp = datastructure["clickTimeStamp"];
+
+            //Redraw
+            repeatIt();
+
+          }
+          r.readAsText(f);
+        } else {
+          alert("Failed to load file");
+        }
+      }
+
+
+    function saveIt(){
+      var output_json = {"clickX":clickX,"clickY":clickY,"clickDrag":clickDrag,"clickTimeStamp":clickTimeStamp};
+      SaveAsFile(JSON.stringify(output_json),"template.json");
+    }
+    function retrieveIt(){
+      readSingleFile(null);
+      //repeatIt();
+    }
+
+    function repeatIt(){
+      //Draw the repeat of the drawing
+      clickX_original = clickX;
+      clickY_original = clickY;
+      loop_id = setInterval(repeater,1);
+      //Use setInterval method because JS will not refresh the canvas unless resource was released during the execution.
+
+    }
+
+    </script>
+
+    </body>
