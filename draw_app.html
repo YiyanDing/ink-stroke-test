@@ -33,31 +33,50 @@
     let canvasHeight = 220
     context2 = document.getElementById('canvas2').getContext("2d");
     var canvasDiv2 = document.getElementById('canvasDiv2');
-
-    $('#canvas').mousedown(function(e){
+    $('#canvas').on("mousedown",function(e){
       //Mouse clicked
       paint = true;
       addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop);
       redraw(context);
     });
+    $('#canvas').on("touchstart",function(e){
+      //Mouse clicked
+      var touch = e.touches[0]
+      paint = true;
+      addClick(touch.clientX - this.offsetLeft, touch.clientY - this.offsetTop);
+      redraw(context);
+    });
 
-    $('#canvas').mousemove(function(e){
+    $('#canvas').on("mousemove",function(e){
       //Mouse is moving
     if(paint){ //If mouse was clicked, draw line
       addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop, true);
       redraw(context);
     }
     });
+    $('#canvas').on("touchmove",function(e){
+      //Mouse is moving
+    if(paint){ //If mouse was clicked, draw line
+      addClick(touch.clientX - this.offsetLeft, touch.clientY - this.offsetTop, true);
+      redraw(context);
+    }
+    });
 
-    $('#canvas').mouseup(function(e){
+    $('#canvas').on("mouseup",function(e){
       //If mouse is no longer clicked, do not draw line
       paint = false;
     });
 
-    $('#canvas').mouseleave(function(e){
-      //If mouse is pointing outside the canvas, do not draw line
+    
+    $('#canvas').on("touchend",function(e){
+      //If mouse is no longer clicked, do not draw line
       paint = false;
     });
+ 
+
+
+  
+   
     var clickX = new Array();
     var clickY = new Array();
     var clickDrag = new Array(); //Records mouse drag event (T/F)
@@ -181,7 +200,7 @@
       //Use setInterval method because JS will not refresh the canvas unless resource was released during the execution.
 
     }
-
+ 
     </script>
 
     </body>
